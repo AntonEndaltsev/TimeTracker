@@ -7,7 +7,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class TimeTrackerApplication {
 
 	public static void main(String[] args) {
+
 		SpringApplication.run(TimeTrackerApplication.class, args);
+		//System.out.println(382%60);
 	}
 
 }

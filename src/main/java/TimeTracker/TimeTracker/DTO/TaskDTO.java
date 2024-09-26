@@ -53,10 +53,10 @@ public class TaskDTO {
     }
 
     public LocalDateTime getStartTime() {
-        return startTime;
+        return this.startTime;
     }
 
-    public void setStartTime(LocalDateTime beginTime) {
+    public void setStartTime(LocalDateTime startTime) {
         this.startTime = startTime;
     }
 

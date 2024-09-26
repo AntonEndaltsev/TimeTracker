@@ -1,5 +1,6 @@
 package TimeTracker.TimeTracker.controllers;
 
+import TimeTracker.TimeTracker.DTO.Task2DTO;
 import TimeTracker.TimeTracker.DTO.UserDTO;
 import TimeTracker.TimeTracker.models.Task;
 import TimeTracker.TimeTracker.DTO.TaskDTO;
@@ -15,7 +16,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @RestController
 public class UserController {
@@ -71,11 +77,24 @@ public class UserController {
 
         User owner = userService.findByNameEquals(user);
 
-        Task task = new Task(name,owner,LocalDateTime.now(),LocalDateTime.now());
+        //завершаем все задачи пользователя, которые остались открытыми
+        finishCurrentUserTasks(owner, LocalDateTime.now());
+
+        //добавляем новую задачу со значением endtime по умолчанию - конец дня
+        Task task = new Task(name,owner,LocalDateTime.now(), LocalDateTime.of(LocalDate.now(), LocalTime.MAX).minusSeconds(1));
         taskService.save(task);
         TaskDTO taskDTO = modelMapper.map(task, TaskDTO.class);
         taskDTO.setOwner_id(owner.getId());
         return new ResponseEntity<>(taskDTO, HttpStatus.OK);
+    }
+
+    public void finishCurrentUserTasks(User owner, LocalDateTime now) {
+        for (Task task : taskService.findAll()) {
+            if (task.getOwner() == owner && now.isBefore(task.getEndTime())) {
+                task.setEndTime(now);
+                taskService.save(task);
+            }
+        }
     }
 
     @GetMapping("/stoptask")
@@ -91,6 +110,64 @@ public class UserController {
         return new ResponseEntity<>(taskDTO, HttpStatus.OK);
     }
 
+    @GetMapping("/showusertasks")
+    public ResponseEntity<?> showtasks(@RequestParam(value = "user", defaultValue = "") String user,
+                                       @RequestParam(value = "from", defaultValue = "0") Integer start,
+                                       @RequestParam(value = "to", defaultValue = "0") Integer finish){
+        if (user.isEmpty()) return new ResponseEntity<>("Не задано имя пользователя", HttpStatus.BAD_REQUEST );
+        if (userService.findByNameEquals(user)==null) return new ResponseEntity<>("Такого пользователя нет в базе", HttpStatus.BAD_REQUEST );
+        if (start>=finish || start<0 || finish>23) return new ResponseEntity<>("Некорректный диапазон", HttpStatus.BAD_REQUEST );
 
+        List<Task2DTO> foundTasks = new ArrayList<>();
+        for(Task task:taskService.findAll()){
+            if (task.getOwner()==userService.findByNameEquals(user)) {
+                if (task.getStartTime().getHour() >= start && task.getEndTime().getHour() <= finish) {
+                    //TaskDTO taskDTO = modelMapper.map(task, TaskDTO.class);
+                    //taskDTO.setOwner_id(task.getOwner().getId());
+                    Task2DTO taskDTO = new Task2DTO();
+                    taskDTO.setName(task.getName());
+                    taskDTO.setTime(calculateTime(task.getStartTime(), task.getEndTime()));
+                    foundTasks.add(taskDTO);
+                    //System.out.println(task.getName());
+                }
+
+                if (task.getStartTime().getHour() >= start && task.getEndTime().getHour() > finish) {
+
+                    Task2DTO taskDTO = new Task2DTO();
+                    taskDTO.setName(task.getName());
+                    taskDTO.setTime(calculateTime(task.getStartTime(), LocalDateTime.of(LocalDate.now(), LocalTime.of(finish,0))));
+                    foundTasks.add(taskDTO);
+
+                }
+
+                if (task.getStartTime().getHour() < start && task.getEndTime().getHour() <= finish) {
+
+                    Task2DTO taskDTO = new Task2DTO();
+                    taskDTO.setName(task.getName());
+                    taskDTO.setTime(calculateTime(LocalDateTime.of(LocalDate.now(), LocalTime.of(start,0)), task.getEndTime()));
+                    foundTasks.add(taskDTO);
+
+                }
+
+            }
+        }
+        Collections.sort(foundTasks);
+        return new ResponseEntity<>(foundTasks, HttpStatus.OK);
+    }
+
+    public String calculateTime(LocalDateTime start, LocalDateTime finish){
+        int totalMinutes = finish.getHour()*60+finish.getMinute() - start.getHour()*60-start.getMinute();
+        //System.out.println(totalMinutes);
+        int totalHours = totalMinutes / 60;
+        //System.out.println(totalHours);
+        if (totalHours>0) {
+            //System.out.println(totalMinutes);
+            //System.out.println(totalHours);
+            totalMinutes -= totalHours*60;
+            //System.out.println(totalMinutes);
+        }
+        //System.out.println(totalMinutes);
+        return totalHours + ":" + totalMinutes;
+    }
 
 }
