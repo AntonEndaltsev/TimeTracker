@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-//@Transactional(readOnly = true)
+@Transactional(readOnly = true)
 public class UserService {
 
     private final UserRepository userRepository;

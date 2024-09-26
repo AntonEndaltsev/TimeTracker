@@ -2,7 +2,7 @@ package TimeTracker.TimeTracker.models;
 
 import jakarta.persistence.*;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "taskstimetracker")
@@ -16,22 +16,25 @@ public class Task{
     private String name;
 
     @ManyToOne
-    @JoinColumn(name = "person_id", referencedColumnName = "id")
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User owner;
 
-    @Column(name = "begin_time")
+    @Column(name = "start_time")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date beginTime;
+    private LocalDateTime startTime;
+
+    public Task() {
+    }
 
     @Column(name = "end_time")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date endTime;
+    private LocalDateTime endTime;
 
-    public Task(int id, String name, User owner, Date beginTime, Date endTime) {
-        this.id = id;
+    public Task(String name, User owner, LocalDateTime startTime, LocalDateTime endTime) {
+
         this.name = name;
         this.owner = owner;
-        this.beginTime = beginTime;
+        this.startTime = startTime;
         this.endTime = endTime;
     }
 
@@ -59,19 +62,19 @@ public class Task{
         this.owner = owner;
     }
 
-    public Date getBeginTime() {
-        return beginTime;
+    public LocalDateTime getStartTime() {
+        return startTime;
     }
 
-    public void setBeginTime(Date beginTime) {
-        this.beginTime = beginTime;
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
     }
 
-    public Date getEndTime() {
+    public LocalDateTime getEndTime() {
         return endTime;
     }
 
-    public void setEndTime(Date endTime) {
+    public void setEndTime(LocalDateTime endTime) {
         this.endTime = endTime;
     }
 }
