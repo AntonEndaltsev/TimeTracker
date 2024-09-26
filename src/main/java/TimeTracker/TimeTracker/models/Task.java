@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity
-@Table(name = "TasksTimeTracker")
+@Table(name = "taskstimetracker")
 public class Task{
     @Id
     @Column(name = "id")

@@ -32,8 +32,8 @@ public class UserService {
         return foundUser.orElse((null));
     }
 
-    public User findByName(String name){
-        Optional<User> foundUser = userRepository.findByName(name);
+    public User findByNameEquals(String name){
+        Optional<User> foundUser = userRepository.findByNameEquals(name);
         return foundUser.orElse((null));
     }
 
@@ -54,7 +54,7 @@ public class UserService {
     }
 
     public Optional<User> getUserByName(String name){
-        return userRepository.findByName(name);
+        return userRepository.findByNameEquals(name);
     }
 
     public List<Task> getTaskByUserId(int id){
