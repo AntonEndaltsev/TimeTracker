@@ -45,4 +45,10 @@ public class TaskService {
         updatedTask.setId(id);
         taskRepository.save(updatedTask);
     }
+
+    @Transactional
+    public void delete(int id){
+
+        taskRepository.deleteById(id);
+    }
 }

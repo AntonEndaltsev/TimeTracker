@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 @RestController
@@ -37,9 +38,10 @@ public class MainController {
 
     @GetMapping("/user")
     public ResponseEntity<?> adduser(@RequestParam(defaultValue = "") String name) {
-        if (name.isEmpty()) return new ResponseEntity<>("Не задано имя пользователя", HttpStatus.BAD_REQUEST );
-        if (name.length()<2) return new ResponseEntity<>("Некорректное имя пользователя", HttpStatus.BAD_REQUEST );
-        if (userService.findByNameEquals(name) != null) return new ResponseEntity<>("Такой пользователь уже существует", HttpStatus.BAD_REQUEST );
+        if (name.isEmpty()) return new ResponseEntity<>("Не задано имя пользователя", HttpStatus.BAD_REQUEST);
+        if (name.length() < 2) return new ResponseEntity<>("Некорректное имя пользователя", HttpStatus.BAD_REQUEST);
+        if (userService.findByNameEquals(name) != null)
+            return new ResponseEntity<>("Такой пользователь уже существует", HttpStatus.BAD_REQUEST);
 
         User newUser = new User(name);
         userService.save(newUser);
@@ -48,12 +50,15 @@ public class MainController {
 
     @GetMapping("/userchange")
     public ResponseEntity<?> updateuser(@RequestParam(value = "oldname", defaultValue = "") String oldname,
-                                    @RequestParam(value = "newname", defaultValue = "") String newname) {
-        if (oldname.isEmpty()) return new ResponseEntity<>("Не задано имя пользователя", HttpStatus.BAD_REQUEST );
-        if (userService.findByNameEquals(oldname) == null) return new ResponseEntity<>("Такого пользователя нет в базе", HttpStatus.BAD_REQUEST );
+                                        @RequestParam(value = "newname", defaultValue = "") String newname) {
+        if (oldname.isEmpty()) return new ResponseEntity<>("Не задано имя пользователя", HttpStatus.BAD_REQUEST);
+        if (userService.findByNameEquals(oldname) == null)
+            return new ResponseEntity<>("Такого пользователя нет в базе", HttpStatus.BAD_REQUEST);
 
-        if (newname.length()<2) return new ResponseEntity<>("Некорректное новое имя пользователя", HttpStatus.BAD_REQUEST );
-        if (userService.findByNameEquals(newname) != null) return new ResponseEntity<>("Пользователь с новым именем уже существует", HttpStatus.BAD_REQUEST );
+        if (newname.length() < 2)
+            return new ResponseEntity<>("Некорректное новое имя пользователя", HttpStatus.BAD_REQUEST);
+        if (userService.findByNameEquals(newname) != null)
+            return new ResponseEntity<>("Пользователь с новым именем уже существует", HttpStatus.BAD_REQUEST);
 
         User updatedUser = userService.findByNameEquals(oldname);
         updatedUser.setName(newname);
@@ -63,13 +68,15 @@ public class MainController {
 
     @GetMapping("/starttask")
     public ResponseEntity<?> addnewtask(@RequestParam(value = "name", defaultValue = "") String name,
-                                    @RequestParam(value = "user", defaultValue = "") String user) {
-        if (name.isEmpty()) return new ResponseEntity<>("Не задано имя задачи", HttpStatus.BAD_REQUEST );
-        if (name.length()<2) return new ResponseEntity<>("Некорректное имя задачи", HttpStatus.BAD_REQUEST );
-        if (taskService.findByName(name)!=null) return new ResponseEntity<>("Такая задача уже существует", HttpStatus.BAD_REQUEST );
+                                        @RequestParam(value = "user", defaultValue = "") String user) {
+        if (name.isEmpty()) return new ResponseEntity<>("Не задано имя задачи", HttpStatus.BAD_REQUEST);
+        if (name.length() < 2) return new ResponseEntity<>("Некорректное имя задачи", HttpStatus.BAD_REQUEST);
+        if (taskService.findByName(name) != null)
+            return new ResponseEntity<>("Такая задача уже существует", HttpStatus.BAD_REQUEST);
 
-        if (user.isEmpty()) return new ResponseEntity<>("Не задано имя пользователя", HttpStatus.BAD_REQUEST );
-        if (userService.findByNameEquals(user) == null) return new ResponseEntity<>("Такого пользователя нет в базе", HttpStatus.BAD_REQUEST );
+        if (user.isEmpty()) return new ResponseEntity<>("Не задано имя пользователя", HttpStatus.BAD_REQUEST);
+        if (userService.findByNameEquals(user) == null)
+            return new ResponseEntity<>("Такого пользователя нет в базе", HttpStatus.BAD_REQUEST);
 
         //if (newname.length()<2) return new ResponseEntity<>("Некорректное новое имя пользователя", HttpStatus.BAD_REQUEST );
         //if (userService.findByNameEquals(newname) != null) return new ResponseEntity<>("Пользователь с новым именем уже существует", HttpStatus.BAD_REQUEST );
@@ -80,7 +87,7 @@ public class MainController {
         finishCurrentUserTasks(owner, LocalDateTime.now());
 
         //добавляем новую задачу со значением endtime по умолчанию - конец дня
-        Task task = new Task(name,owner,LocalDateTime.now(), LocalDateTime.of(LocalDate.now(), LocalTime.MAX).minusSeconds(1));
+        Task task = new Task(name, owner, LocalDateTime.now(), LocalDateTime.of(LocalDate.now(), LocalTime.MAX).minusSeconds(1));
         taskService.save(task);
         TaskDTO taskDTO = modelMapper.map(task, TaskDTO.class);
         taskDTO.setOwner_id(owner.getId());
@@ -97,9 +104,10 @@ public class MainController {
     }
 
     @GetMapping("/stoptask")
-    public ResponseEntity<?> stoptask(@RequestParam(value = "name", defaultValue = "") String name){
-        if (name.isEmpty()) return new ResponseEntity<>("Не задано имя задачи для завершения", HttpStatus.BAD_REQUEST );
-        if (taskService.findByName(name)==null) return new ResponseEntity<>("Такой задачи нет в базе", HttpStatus.BAD_REQUEST );
+    public ResponseEntity<?> stoptask(@RequestParam(value = "name", defaultValue = "") String name) {
+        if (name.isEmpty()) return new ResponseEntity<>("Не задано имя задачи для завершения", HttpStatus.BAD_REQUEST);
+        if (taskService.findByName(name) == null)
+            return new ResponseEntity<>("Такой задачи нет в базе", HttpStatus.BAD_REQUEST);
         Task foundTask = taskService.findByName(name);
         foundTask.setEndTime(LocalDateTime.now());
 
@@ -112,14 +120,16 @@ public class MainController {
     @GetMapping("/showusertasks")
     public ResponseEntity<?> showtasks(@RequestParam(value = "user", defaultValue = "") String user,
                                        @RequestParam(value = "from", defaultValue = "0") Integer start,
-                                       @RequestParam(value = "to", defaultValue = "0") Integer finish){
-        if (user.isEmpty()) return new ResponseEntity<>("Не задано имя пользователя", HttpStatus.BAD_REQUEST );
-        if (userService.findByNameEquals(user)==null) return new ResponseEntity<>("Такого пользователя нет в базе", HttpStatus.BAD_REQUEST );
-        if (start>=finish || start<0 || finish>23) return new ResponseEntity<>("Некорректный диапазон", HttpStatus.BAD_REQUEST );
+                                       @RequestParam(value = "to", defaultValue = "0") Integer finish) {
+        if (user.isEmpty()) return new ResponseEntity<>("Не задано имя пользователя", HttpStatus.BAD_REQUEST);
+        if (userService.findByNameEquals(user) == null)
+            return new ResponseEntity<>("Такого пользователя нет в базе", HttpStatus.BAD_REQUEST);
+        if (start >= finish || start < 0 || finish > 23)
+            return new ResponseEntity<>("Некорректный диапазон", HttpStatus.BAD_REQUEST);
 
         List<Task2DTO> foundTasks = new ArrayList<>();
-        for(Task task:taskService.findAll()){
-            if (task.getOwner()==userService.findByNameEquals(user)) {
+        for (Task task : taskService.findAll()) {
+            if (task.getOwner() == userService.findByNameEquals(user)) {
                 if (task.getStartTime().getHour() >= start && task.getEndTime().getHour() <= finish) {
                     //TaskDTO taskDTO = modelMapper.map(task, TaskDTO.class);
                     //taskDTO.setOwner_id(task.getOwner().getId());
@@ -134,16 +144,16 @@ public class MainController {
 
                     Task2DTO taskDTO = new Task2DTO();
                     taskDTO.setName(task.getName());
-                    taskDTO.setTime(calculateTime(task.getStartTime(), LocalDateTime.of(LocalDate.now(), LocalTime.of(finish,0))));
+                    taskDTO.setTime(calculateTime(task.getStartTime(), LocalDateTime.of(LocalDate.now(), LocalTime.of(finish, 0))));
                     foundTasks.add(taskDTO);
 
                 }
 
-                if (task.getStartTime().getHour() < start && task.getEndTime().getHour() <= finish && task.getEndTime().getHour()> start) {
+                if (task.getStartTime().getHour() < start && task.getEndTime().getHour() <= finish && task.getEndTime().getHour() > start) {
 
                     Task2DTO taskDTO = new Task2DTO();
                     taskDTO.setName(task.getName());
-                    taskDTO.setTime(calculateTime(LocalDateTime.of(LocalDate.now(), LocalTime.of(start,0)), task.getEndTime()));
+                    taskDTO.setTime(calculateTime(LocalDateTime.of(LocalDate.now(), LocalTime.of(start, 0)), task.getEndTime()));
                     foundTasks.add(taskDTO);
 
                 }
@@ -152,7 +162,7 @@ public class MainController {
 
                     Task2DTO taskDTO = new Task2DTO();
                     taskDTO.setName(task.getName());
-                    taskDTO.setTime(calculateTime(LocalDateTime.of(LocalDate.now(), LocalTime.of(start,0)), LocalDateTime.of(LocalDate.now(), LocalTime.of(finish,0))));
+                    taskDTO.setTime(calculateTime(LocalDateTime.of(LocalDate.now(), LocalTime.of(start, 0)), LocalDateTime.of(LocalDate.now(), LocalTime.of(finish, 0))));
                     foundTasks.add(taskDTO);
                 }
 
@@ -164,31 +174,33 @@ public class MainController {
 
     @GetMapping("/showusertime")
     public ResponseEntity<?> showtime(@RequestParam(value = "user", defaultValue = "") String user,
-                                       @RequestParam(value = "from", defaultValue = "0") Integer start,
-                                       @RequestParam(value = "to", defaultValue = "0") Integer finish){
-        if (user.isEmpty()) return new ResponseEntity<>("Не задано имя пользователя", HttpStatus.BAD_REQUEST );
-        if (userService.findByNameEquals(user)==null) return new ResponseEntity<>("Такого пользователя нет в базе", HttpStatus.BAD_REQUEST );
-        if (start>=finish || start<0 || finish>23) return new ResponseEntity<>("Некорректный диапазон", HttpStatus.BAD_REQUEST );
+                                      @RequestParam(value = "from", defaultValue = "0") Integer start,
+                                      @RequestParam(value = "to", defaultValue = "0") Integer finish) {
+        if (user.isEmpty()) return new ResponseEntity<>("Не задано имя пользователя", HttpStatus.BAD_REQUEST);
+        if (userService.findByNameEquals(user) == null)
+            return new ResponseEntity<>("Такого пользователя нет в базе", HttpStatus.BAD_REQUEST);
+        if (start >= finish || start < 0 || finish > 23)
+            return new ResponseEntity<>("Некорректный диапазон", HttpStatus.BAD_REQUEST);
 
         int time = 0;
-        for(Task task:taskService.findAll()){
-            if (task.getOwner()==userService.findByNameEquals(user)) {
+        for (Task task : taskService.findAll()) {
+            if (task.getOwner() == userService.findByNameEquals(user)) {
                 if (task.getStartTime().getHour() >= start && task.getEndTime().getHour() <= finish) {
-                    time += task.getEndTime().getHour()*60+task.getEndTime().getMinute() - task.getStartTime().getHour()*60-task.getStartTime().getMinute();
+                    time += task.getEndTime().getHour() * 60 + task.getEndTime().getMinute() - task.getStartTime().getHour() * 60 - task.getStartTime().getMinute();
                 }
 
                 if (task.getStartTime().getHour() >= start && task.getEndTime().getHour() > finish && task.getStartTime().getHour() < finish) {
-                    time += finish*60 - task.getStartTime().getHour()*60-task.getStartTime().getMinute();
+                    time += finish * 60 - task.getStartTime().getHour() * 60 - task.getStartTime().getMinute();
 
                 }
 
-                if (task.getStartTime().getHour() < start && task.getEndTime().getHour() <= finish && task.getEndTime().getHour()> start) {
-                    time += task.getEndTime().getHour()*60+task.getEndTime().getMinute() - start*60;
+                if (task.getStartTime().getHour() < start && task.getEndTime().getHour() <= finish && task.getEndTime().getHour() > start) {
+                    time += task.getEndTime().getHour() * 60 + task.getEndTime().getMinute() - start * 60;
 
                 }
 
                 if (task.getStartTime().getHour() < start && task.getEndTime().getHour() > finish) {
-                    time += finish * 60 - start*60;
+                    time += finish * 60 - start * 60;
 
                 }
 
@@ -201,19 +213,60 @@ public class MainController {
         return new ResponseEntity<>(answer, HttpStatus.OK);
     }
 
-    public String calculateTime(LocalDateTime start, LocalDateTime finish){
-        int totalMinutes = finish.getHour()*60+finish.getMinute() - start.getHour()*60-start.getMinute();
+    public String calculateTime(LocalDateTime start, LocalDateTime finish) {
+        int totalMinutes = finish.getHour() * 60 + finish.getMinute() - start.getHour() * 60 - start.getMinute();
         //System.out.println(totalMinutes);
         int totalHours = totalMinutes / 60;
         //System.out.println(totalHours);
-        if (totalHours>0) {
+        if (totalHours > 0) {
             //System.out.println(totalMinutes);
             //System.out.println(totalHours);
-            totalMinutes -= totalHours*60;
+            totalMinutes -= totalHours * 60;
             //System.out.println(totalMinutes);
         }
         //System.out.println(totalMinutes);
         return totalHours + ":" + totalMinutes;
     }
 
+    @GetMapping("/deleteusertasks")
+    public ResponseEntity<?> deleteusertaskscontroller(@RequestParam(value = "user", defaultValue = "") String user) {
+        if (user.isEmpty()) return new ResponseEntity<>("Не задано имя пользователя", HttpStatus.BAD_REQUEST);
+        if (userService.findByNameEquals(user) == null)
+            return new ResponseEntity<>("Такого пользователя нет в базе", HttpStatus.BAD_REQUEST);
+
+
+        return new ResponseEntity<>( deleteUserTasks(user), HttpStatus.OK);
+    }
+
+    @GetMapping("/deleteuser")
+    public ResponseEntity<?> deleteusercontroller(@RequestParam(value = "user", defaultValue = "") String user) {
+        if (user.isEmpty()) return new ResponseEntity<>("Не задано имя пользователя", HttpStatus.BAD_REQUEST);
+        if (userService.findByNameEquals(user) == null)
+            return new ResponseEntity<>("Такого пользователя нет в базе", HttpStatus.BAD_REQUEST);
+
+        List<TaskDTO> allTasksDTO = deleteUserTasks(user);
+        userService.delete(userService.findByNameEquals(user).getId());
+        List<UserDTO> allUserDTO = new ArrayList<>();
+        for (User user1: userService.findAll())  allUserDTO.add(modelMapper.map(user1, UserDTO.class));
+        return new ResponseEntity<>(allUserDTO, HttpStatus.OK);
+    }
+
+    public List<TaskDTO> deleteUserTasks(String user){
+        List<Task> allTasks = taskService.findAll();
+        List<TaskDTO> allTasksDTO = new ArrayList<>();
+        Iterator iterator = allTasks.iterator();
+        while (iterator.hasNext()) {
+            Task task = (Task) iterator.next();
+
+            if (task.getOwner() == userService.findByNameEquals(user)) {
+                taskService.delete(task.getId());
+            }
+            else {
+                TaskDTO taskDTO = modelMapper.map(task, TaskDTO.class);
+                taskDTO.setOwner_id(task.getOwner().getId());
+                allTasksDTO.add(taskDTO);
+            }
+        }
+        return  allTasksDTO;
+    }
 }
