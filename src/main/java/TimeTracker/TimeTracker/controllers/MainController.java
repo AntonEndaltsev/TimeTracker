@@ -7,7 +7,6 @@ import TimeTracker.TimeTracker.DTO.TaskDTO;
 import TimeTracker.TimeTracker.models.User;
 import TimeTracker.TimeTracker.services.TaskService;
 import TimeTracker.TimeTracker.services.UserService;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -24,14 +23,14 @@ import java.util.Collections;
 import java.util.List;
 
 @RestController
-public class UserController {
+public class MainController {
     private final UserService userService;
     private final TaskService taskService;
 
     ObjectMapper objectMapper = new ObjectMapper();
     ModelMapper modelMapper = new ModelMapper();
 
-    public UserController(UserService userService, TaskService taskService) {
+    public MainController(UserService userService, TaskService taskService) {
         this.userService = userService;
         this.taskService = taskService;
     }
@@ -131,7 +130,7 @@ public class UserController {
                     //System.out.println(task.getName());
                 }
 
-                if (task.getStartTime().getHour() >= start && task.getEndTime().getHour() > finish) {
+                if (task.getStartTime().getHour() >= start && task.getEndTime().getHour() > finish && task.getStartTime().getHour() < finish) {
 
                     Task2DTO taskDTO = new Task2DTO();
                     taskDTO.setName(task.getName());
@@ -140,7 +139,7 @@ public class UserController {
 
                 }
 
-                if (task.getStartTime().getHour() < start && task.getEndTime().getHour() <= finish) {
+                if (task.getStartTime().getHour() < start && task.getEndTime().getHour() <= finish && task.getEndTime().getHour()> start) {
 
                     Task2DTO taskDTO = new Task2DTO();
                     taskDTO.setName(task.getName());
@@ -149,10 +148,57 @@ public class UserController {
 
                 }
 
+                if (task.getStartTime().getHour() < start && task.getEndTime().getHour() > finish) {
+
+                    Task2DTO taskDTO = new Task2DTO();
+                    taskDTO.setName(task.getName());
+                    taskDTO.setTime(calculateTime(LocalDateTime.of(LocalDate.now(), LocalTime.of(start,0)), LocalDateTime.of(LocalDate.now(), LocalTime.of(finish,0))));
+                    foundTasks.add(taskDTO);
+                }
+
             }
         }
         Collections.sort(foundTasks);
         return new ResponseEntity<>(foundTasks, HttpStatus.OK);
+    }
+
+    @GetMapping("/showusertime")
+    public ResponseEntity<?> showtime(@RequestParam(value = "user", defaultValue = "") String user,
+                                       @RequestParam(value = "from", defaultValue = "0") Integer start,
+                                       @RequestParam(value = "to", defaultValue = "0") Integer finish){
+        if (user.isEmpty()) return new ResponseEntity<>("Не задано имя пользователя", HttpStatus.BAD_REQUEST );
+        if (userService.findByNameEquals(user)==null) return new ResponseEntity<>("Такого пользователя нет в базе", HttpStatus.BAD_REQUEST );
+        if (start>=finish || start<0 || finish>23) return new ResponseEntity<>("Некорректный диапазон", HttpStatus.BAD_REQUEST );
+
+        int time = 0;
+        for(Task task:taskService.findAll()){
+            if (task.getOwner()==userService.findByNameEquals(user)) {
+                if (task.getStartTime().getHour() >= start && task.getEndTime().getHour() <= finish) {
+                    time += task.getEndTime().getHour()*60+task.getEndTime().getMinute() - task.getStartTime().getHour()*60-task.getStartTime().getMinute();
+                }
+
+                if (task.getStartTime().getHour() >= start && task.getEndTime().getHour() > finish && task.getStartTime().getHour() < finish) {
+                    time += finish*60 - task.getStartTime().getHour()*60-task.getStartTime().getMinute();
+
+                }
+
+                if (task.getStartTime().getHour() < start && task.getEndTime().getHour() <= finish && task.getEndTime().getHour()> start) {
+                    time += task.getEndTime().getHour()*60+task.getEndTime().getMinute() - start*60;
+
+                }
+
+                if (task.getStartTime().getHour() < start && task.getEndTime().getHour() > finish) {
+                    time += finish * 60 - start*60;
+
+                }
+
+            }
+        }
+        int totalHours = time / 60;
+
+        int totalMinutes = time - totalHours * 60;
+        String answer = totalHours + ":" + totalMinutes;
+        return new ResponseEntity<>(answer, HttpStatus.OK);
     }
 
     public String calculateTime(LocalDateTime start, LocalDateTime finish){
